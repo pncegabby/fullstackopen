@@ -1,15 +1,12 @@
 const express = require('express')
 const morgan = require('morgan')
-const cors = require('cors')
 const app = express()
 
-
-app.use(cors())
 app.use(express.json())
 app.use(express.static('dist'))
 
 morgan.token('body', (request) => {
-	return request.method === 'POST' ? JSON.stringify(request.body) : ''
+	return request.method === 'POST' || request.method === 'PUT' ? JSON.stringify(request.body) : ''
 })
 
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :body'))
@@ -63,6 +60,38 @@ app.get('/api/persons/:id', (request, response) => {
     {
         response.status(404).end()
     }
+})
+
+//Updating a person's number
+app.put('/api/persons/:id', (request, response) => {
+    const id = request.params.id
+    const body = request.body
+
+    if(!body.number)
+    {
+        return response.status(400).json({
+            error: "number is missing"
+        })
+    }
+    
+    const person = phonebook.find(person => person.id === id)
+
+    if(!person)
+    {
+        response.status(404).json({
+            error: "person not found"
+        })
+    }
+
+    const updatedPerson = {
+        ...person,
+        name: person.name,
+        number: body.number
+    }
+
+    phonebook = phonebook.map(person => person.id === id ? updatedPerson : person)
+
+    response.json(updatedPerson)
 })
 
 app.delete('/api/persons/:id', (request, response) => {
